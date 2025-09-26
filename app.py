@@ -39,27 +39,38 @@ def get_basic_auth_headers(username, password):
     return {"Authorization": f"Basic {token}"}
 
 # ---------------- Authenticated Session ---------------- #
-def get_authenticated_session(username, password, base_url):
-    """Return a requests.Session() authenticated for enteliWEB."""
+def get_authenticated_session(username, password, base_url, retries=3, delay=3):
+    """
+    Returns a requests.Session() guaranteed to be authenticated.
+    Retries login up to `retries` times if 401 occurs.
+    """
     s = requests.Session()
-    s.auth = (username, password)
     s.headers.update(get_basic_auth_headers(username, password))
-
-    try:
-        # Initial GET to establish cookie
-        url = f"{base_url}/api/.bacnet?alt=json"
-        r = s.get(url, timeout=60)
-        if r.status_code == 401:
-            print("[WARN] Got 401 on initial request, retrying in 3 seconds...")
-            time.sleep(3)
+    url = f"{base_url}/api/.bacnet?alt=json"
+    
+    for attempt in range(1, retries+1):
+        try:
             r = s.get(url, timeout=60)
-        r.raise_for_status()
-        print(f"[INFO] Authenticated session ready. Status: {r.status_code}")
-    except Exception as e:
-        print(f"[ERROR] Failed to authenticate session: {e}")
-        raise e
-
-    return s
+            if r.status_code == 401:
+                print(f"[WARN] Unauthorized on attempt {attempt}, retrying in {delay}s...")
+                time.sleep(delay)
+                continue
+            r.raise_for_status()
+            print(f"[INFO] Authenticated session ready. Status: {r.status_code}")
+            return s
+        except HTTPError as e:
+            if e.response.status_code == 401 and attempt < retries:
+                print(f"[WARN] HTTP 401, retrying ({attempt}/{retries}) after {delay}s...")
+                time.sleep(delay)
+                continue
+            else:
+                print(f"[ERROR] Authentication failed: {e}")
+                raise
+        except Exception as e:
+            print(f"[ERROR] Error during authentication: {e}")
+            raise
+    
+    raise Exception("Failed to authenticate after multiple attempts")
 
 # ---------------- Logout ---------------- #
 @app.route("/logout")
@@ -143,10 +154,15 @@ def select_site():
         flash("Please login first.", "danger")
         return redirect(url_for("login"))
 
+    # ---- Ensure session is fully authorized ----
+    try:
+        s = get_authenticated_session(username, password, base_url)
+    except Exception as e:
+        flash(f"Authentication failed: {str(e)}", "danger")
+        return redirect(url_for("login"))
+
     devices = []
     selected_site = None
-
-    s = get_authenticated_session(username, password, base_url)
 
     # Fetch sites
     try:
@@ -163,10 +179,12 @@ def select_site():
         selected_site = request.form.get("site")
         if selected_site:
             try:
+                # --- Get basic device list ---
                 devices_response = retry_request(lambda: s.get(f"{base_url}/api/.bacnet/{selected_site}?alt=json", timeout=300))
                 devices_json = devices_response.json()
                 device_ids = [d for d in devices_json.keys() if d not in ["$base","nodeType","truncated"]]
 
+                # --- Standard multi-request ---
                 multi_values = {}
                 for idx, device_id in enumerate(device_ids, start=1):
                     multi_values[f"{idx}_app"] = {"$base":"Any","via":f"/.bacnet/{selected_site}/{device_id}/device,{device_id}/application-software-version"}
@@ -206,27 +224,27 @@ def select_site():
 
                 devices = []
                 for idx, device_id in enumerate(device_ids, start=1):
-                    app_version = values.get(f"{idx}_app",{}).get("value")
-                    fw_version = values.get(f"{idx}_fw",{}).get("value")
-                    model_name = values.get(f"{idx}_model",{}).get("value","-")
-                    serial_number = values.get(f"{idx}_serial",{}).get("value") or "-"
-                    vendor = values.get(f"{idx}_vendor",{}).get("value","-")
+                    app_version = values.get(f"{idx}_app", {}).get("value")
+                    fw_version = values.get(f"{idx}_fw", {}).get("value")
+                    model_name = values.get(f"{idx}_model", {}).get("value", "-")
+                    serial_number = values.get(f"{idx}_serial", {}).get("value") or "-"
+                    vendor = values.get(f"{idx}_vendor", {}).get("value", "-")
 
-                    mac_hex = values.get(f"{idx}_mac",{}).get("value")
+                    mac_hex = values.get(f"{idx}_mac", {}).get("value")
                     try:
-                        macold = values.get(f"{idx}_macold",{}).get("bnEther",{}).get("address",{}).get("value")
+                        macold = values.get(f"{idx}_macold", {}).get("bnEther", {}).get("address", {}).get("value")
                     except:
                         macold = None
                     mac = format_mac(mac_hex) or format_mac(macold)
 
-                    ip1_raw = values.get(f"{idx}_ipold",{}).get("value") or values.get(f"{idx}_ip1",{}).get("value","-")
+                    ip1_raw = values.get(f"{idx}_ipold", {}).get("value") or values.get(f"{idx}_ip1", {}).get("value", "-")
                     ip1 = extract_ip(ip1_raw)
-                    ip2_raw = values.get(f"{idx}_ip2",{}).get("value","-")
+                    ip2_raw = values.get(f"{idx}_ip2", {}).get("value", "-")
                     ip2 = extract_ip(ip2_raw)
 
                     devices.append({
                         "device_id": device_id,
-                        "display_name": devices_json[device_id].get("displayName","-"),
+                        "display_name": devices_json[device_id].get("displayName", "-"),
                         "app_version": app_version,
                         "fw_version": fw_version,
                         "model_name": model_name,
@@ -237,12 +255,86 @@ def select_site():
                         "vendor": vendor
                     })
 
-                devices.sort(key=lambda x:int(x["device_id"]))
+                # --- Extra properties for VAV devices ---
+                extra_points_map = {
+                    "vav_box_size": ("multi-state-value", 106),
+                    "damper_runtime": ("analog-value", 145),
+                    "cooling_min_setpoint": ("analog-value", 124),
+                    "cooling_max_setpoint": ("analog-value", 125),
+                    "heating_min_setpoint": ("analog-value", 126),
+                    "heating_max_setpoint": ("analog-value", 127),
+                    "standby_airflow": ("analog-value", 129),
+                    "damper_sensor": ("analog-input", 6),
+                    "damper_sensor_calibration": ("analog-input", 6, "calibration"),
+                    "controller_airflow": ("analog-value", 120),
+                    "airflow_setpoint": ("analog-value", 830),
+                    "damper_position": ("analog-input", 5),
+                    "flow_factor": ("analog-value", 121),
+                    "space_temp": ("analog-value", 2003),
+                    "space_temp_setpoint": ("analog-value", 2001),
+                    "discharge_temp": ("analog-input", 2)
+                }
+
+                # Enum map for vav_box_size
+                vav_box_size_map = {
+                    1: "4 in_",
+                    2: "5 in_",
+                    3: "6 in_",
+                    4: "8 in_",
+                    5: "10 in_",
+                    6: "12 in_",
+                    7: "14 in_",
+                    8: "16 in_",
+                    9: "24x16 in_",
+                    10: "28x14 in_",
+                    11: "32x16 in_",
+                    12: "Other_"
+                }
+
+                extra_multi_values = {}
+                for idx, device in enumerate(devices, start=1):
+                    if any(x in device["model_name"].lower() for x in ["ezv","v400","v100","dvc"]):
+                        device_id = device["device_id"]
+                        for prop_name, point_info in extra_points_map.items():
+                            point_type, point_number = point_info[0], point_info[1]
+                            subfield = point_info[2] if len(point_info) > 2 else None
+
+                            key = f"{idx}_{prop_name}"
+                            path = f"/.bacnet/{selected_site}/{device_id}/{point_type},{point_number}/present-value"
+                            if subfield:
+                                path = f"/.bacnet/{selected_site}/{device_id}/{point_type},{point_number}/{subfield}"
+                            path += "?alt=json"
+
+                            extra_multi_values[key] = {"$base": "Any", "via": path}
+
+                if extra_multi_values:
+                    extra_payload = {
+                        "$base": "Struct",
+                        "lifetime": {"$base": "Unsigned", "value": 120},
+                        "values": {"$base": "List", **extra_multi_values}
+                    }
+                    extra_response = retry_request(lambda: s.post(f"{base_url}/api/.multi?alt=json", json=extra_payload, timeout=300))
+                    extra_values = extra_response.json().get("values", {})
+
+                    for idx, device in enumerate(devices, start=1):
+                        for prop_name in extra_points_map.keys():
+                            key = f"{idx}_{prop_name}"
+                            value = extra_values.get(key, {}).get("value", "-")
+
+                            # Apply VAV box size mapping
+                            if prop_name == "vav_box_size" and isinstance(value, int):
+                                device[prop_name] = vav_box_size_map.get(value, f"Unknown ({value})")
+                            else:
+                                device[prop_name] = value
+
+                devices.sort(key=lambda x: int(x["device_id"]))
+
                 flash(f"Devices API response: {multi_response.status_code} {STATUS_CODES.get(multi_response.status_code,'')}", "info")
             except Exception as e:
                 flash(f"Failed to fetch device details: {str(e)}","danger")
 
     return render_template("sites.html", sites=sites, devices=devices, selected_site=selected_site, base_url=base_url)
+
 
 # ---------------- API Query ---------------- #
 @app.route("/api_query", methods=["GET","POST"])
@@ -298,5 +390,5 @@ def api_query():
 if __name__ == "__main__":
     # Host 0.0.0.0 to allow other devices on your local network to access
     # Do NOT use debug=True in production
-    app.run(host="0.0.0.0", port=5010, debug=False)
+    app.run(host="0.0.0.0", port=5010, debug=True)
 

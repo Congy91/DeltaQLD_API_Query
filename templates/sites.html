@@ -40,28 +40,24 @@
         <button id="exportBtn" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-blue-700">Export CSV</button>
     </div>
 
-   <div class="mb-4 mt-4 flex flex-col items-center gap-2">
-    <input type="text" id="tableSearch" placeholder="Search table..."
-        class="px-2 py-1 border rounded w-full max-w-md">
+    <div class="mb-4 mt-4 flex flex-col items-center gap-2">
+        <input type="text" id="tableSearch" placeholder="Search table..." class="px-2 py-1 border rounded w-full max-w-md">
 
-    <div class="flex flex-wrap justify-center gap-2 mt-2">
-        <button type="button" class="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600" data-filter="reset">Reset</button>
-        <button type="button" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600" data-filter="delta">Delta</button>
-        <button type="button" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600" data-filter="3rdparty">3rd Party</button>
-        <button type="button" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600" data-filter="red5">Red5</button>
-        <button type="button" class="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600" data-filter="ebmgr">eBMGR</button>
-        <button type="button" class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600" data-filter="vav">VAV</button>
-        <button type="button" class="px-3 py-1 bg-pink-500 text-white rounded hover:bg-pink-600" data-filter="dfm400p">DFM400P</button>
-        <button type="button" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600" data-filter="ip">IP Devices</button>
+        <div class="flex flex-wrap justify-center gap-2 mt-2">
+            <button type="button" class="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600" data-filter="reset">Reset</button>
+            <button type="button" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600" data-filter="delta">Delta</button>
+            <button type="button" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600" data-filter="3rdparty">3rd Party</button>
+            <button type="button" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600" data-filter="red5">Red5</button>
+            <button type="button" class="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600" data-filter="ebmgr">eBMGR</button>
+            <button type="button" class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600" data-filter="vav">VAV</button>
+            <button type="button" class="px-3 py-1 bg-pink-500 text-white rounded hover:bg-pink-600" data-filter="dfm400p">DFM400P</button>
+            <button type="button" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600" data-filter="ip">IP Devices</button>
+        </div>
     </div>
-</div>
-
-
 
     <!-- Column toggle checkboxes -->
-    <div class="mb-4">
-        <span class="font-semibold mr-2">Toggle Columns:</span>
-        <!--<label class="mr-2"><input type="checkbox" checked data-col="vendorid"> Vendor ID</label>-->
+    <div class="mb-4 overflow-auto max-h-42 border p-2 rounded flex flex-wrap gap-2">
+        <span class="font-semibold w-full mb-1">Toggle Columns:</span>
         <label class="mr-2"><input type="checkbox" checked data-col="vendor"> Vendor</label>
         <label class="mr-2"><input type="checkbox" checked data-col="device_id"> Device Number</label>
         <label class="mr-2"><input type="checkbox" checked data-col="display_name"> Device Name</label>
@@ -70,14 +66,32 @@
         <label class="mr-2"><input type="checkbox" data-col="fw_version"> Firmware Revision</label>
         <label class="mr-2"><input type="checkbox" data-col="serial_number"> Serial Number</label>
         <label class="mr-2"><input type="checkbox" data-col="ip1"> IP Address</label>
-        <!--<label class="mr-2"><input type="checkbox" data-col="ip2"> IP2</label>-->
         <label class="mr-2"><input type="checkbox" data-col="mac"> MAC Address</label>
+
+        <!-- VAV points - now visible -->
+        <span class="font-semibold w-full mb-1">VAV Related Points</span>
+        <label class="mr-2"><input type="checkbox" data-col="vav_box_size"> VAV Box Size</label>
+        <label class="mr-2"><input type="checkbox" data-col="damper_runtime"> Damper Runtime</label>
+        <label class="mr-2"><input type="checkbox" data-col="cooling_min_setpoint"> Cooling Min Setpoint</label>
+        <label class="mr-2"><input type="checkbox" data-col="cooling_max_setpoint"> Cooling Max Setpoint</label>
+        <label class="mr-2"><input type="checkbox" data-col="heating_min_setpoint"> Heating Min Setpoint</label>
+        <label class="mr-2"><input type="checkbox" data-col="heating_max_setpoint"> Heating Max Setpoint</label>
+        <label class="mr-2"><input type="checkbox" data-col="standby_airflow"> Standby Airflow Setpoint</label>
+        <label class="mr-2"><input type="checkbox" data-col="damper_sensor"> Damper Sensor</label>
+        <label class="mr-2"><input type="checkbox" data-col="controller_airflow"> Controller Airflow</label>
+        <label class="mr-2"><input type="checkbox" data-col="airflow_setpoint"> Airflow Setpoint</label>
+        <label class="mr-2"><input type="checkbox" data-col="damper_position"> Damper Position</label>
+        <label class="mr-2"><input type="checkbox" data-col="damper_sensor_calibration"> Damper Sensor Calibration</label>
+        <label class="mr-2"><input type="checkbox" data-col="flow_factor"> Flow Factor</label>
+        <label class="mr-2"><input type="checkbox" data-col="space_temp"> Space Temp</label>
+        <label class="mr-2"><input type="checkbox" data-col="space_temp_setpoint"> Space Temp Setpoint</label>
+        <label class="mr-2"><input type="checkbox" data-col="discharge_temp"> Discharge Temp</label>
     </div>
+
 
     <table id="deviceTable" class="w-full border-collapse mt-4">
         <thead>
             <tr class="bg-gray-200 text-left">
-                <!--<th class="border px-2 py-1 col-vendorid">Vendor ID</th>-->
                 <th class="border px-2 py-1 col-vendor">Vendor</th>
                 <th class="border px-2 py-1 col-device_id">Device ID</th>
                 <th class="border px-2 py-1 col-display_name">Display Name</th>
@@ -86,31 +100,59 @@
                 <th class="border px-2 py-1 col-fw_version">Firmware Revision</th>
                 <th class="border px-2 py-1 col-serial_number">Serial Number</th>
                 <th class="border px-2 py-1 col-ip1">IP1</th>
-                <!--<th class="border px-2 py-1 col-ip2">IP2</th>-->
                 <th class="border px-2 py-1 col-mac">MAC</th>
+                <!-- VAV columns -->
+                <th class="border px-2 py-1 col-vav_box_size">VAV Box Size (in)</th>
+                <th class="border px-2 py-1 col-damper_runtime">Damper Runtime (sec)</th>
+                <th class="border px-2 py-1 col-cooling_min_setpoint">Cooling Min Setpoint (L/s)</th>
+                <th class="border px-2 py-1 col-cooling_max_setpoint">Cooling Max Setpoint (L/s)</th>
+                <th class="border px-2 py-1 col-heating_min_setpoint">Heating Min Setpoint (L/s)</th>
+                <th class="border px-2 py-1 col-heating_max_setpoint">Heating Max Setpoint (L/s)</th>
+                <th class="border px-2 py-1 col-standby_airflow">Standby Airflow Setpoint (L/s)</th>
+                <th class="border px-2 py-1 col-damper_sensor">Damper Sensor (Pa)</th>
+                <th class="border px-2 py-1 col-controller_airflow">Controller Airflow (L/s)</th>
+                <th class="border px-2 py-1 col-airflow_setpoint">Airflow Setpoint (L/s)</th>
+                <th class="border px-2 py-1 col-damper_position">Damper Position (%)</th>
+                <th class="border px-2 py-1 col-damper_sensor_calibration">Damper Sensor Calibration (Pa)</th>
+                <th class="border px-2 py-1 col-flow_factor">Flow Factor (%)</th>
+                <th class="border px-2 py-1 col-space_temp">Space Temp (°C)</th>
+                <th class="border px-2 py-1 col-space_temp_setpoint">Space Temp Setpoint (°C)</th>
+                <th class="border px-2 py-1 col-discharge_temp">Discharge Temp (°C)</th>
+
             </tr>
-            <!-- Column filters -->
             <tr class="bg-gray-100 text-left">
-                <!--<th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="vendorid"></th>-->
+                <!-- filter inputs same as above -->
                 <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="vendor"></th>
                 <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="device_id"></th>
-                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="display_name">
-                </th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="display_name"></th>
                 <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="model_name"></th>
-                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="app_version">
-                </th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="app_version"></th>
                 <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="fw_version"></th>
-                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="serial_number">
-                </th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="serial_number"></th>
                 <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="ip1"></th>
-                <!--<th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="ip2"></th>-->
                 <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="mac"></th>
+                <!-- VAV filters -->
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="vav_box_size"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="damper_runtime"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="cooling_min_setpoint"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="cooling_max_setpoint"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="heating_min_setpoint"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="heating_max_setpoint"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="standby_airflow"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="damper_sensor"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="controller_airflow"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="airflow_setpoint"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="damper_position"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="damper_sensor_calibration"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="flow_factor"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="space_temp"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="space_temp_setpoint"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="discharge_temp"></th>
             </tr>
         </thead>
         <tbody>
             {% for d in devices %}
             <tr>
-                <!--<td class="border px-2 py-1 col-vendorid">{{ d.vendorid }}</td>-->
                 <td class="border px-2 py-1 col-vendor">{{ d.vendor }}</td>
                 <td class="border px-2 py-1 col-device_id">{{ d.device_id }}</td>
                 <td class="border px-2 py-1 col-display_name">{{ d.display_name }}</td>
@@ -119,8 +161,26 @@
                 <td class="border px-2 py-1 col-fw_version">{{ d.fw_version }}</td>
                 <td class="border px-2 py-1 col-serial_number">{{ d.serial_number }}</td>
                 <td class="border px-2 py-1 col-ip1">{{ d.ip1 }}</td>
-                <!--<td class="border px-2 py-1 col-ip2">{{ d.ip2 }}</td>-->
                 <td class="border px-2 py-1 col-mac">{{ d.mac }}</td>
+                <!-- VAV data placeholders -->
+                <td class="border px-2 py-1 col-vav_box_size">{{ d.vav_box_size }}</td>
+                <td class="border px-2 py-1 col-damper_runtime">{{ d.damper_runtime }}</td>
+                <td class="border px-2 py-1 col-cooling_min_setpoint">{{ d.cooling_min_setpoint }}</td>
+                <td class="border px-2 py-1 col-cooling_max_setpoint">{{ d.cooling_max_setpoint }}</td>
+                <td class="border px-2 py-1 col-heating_min_setpoint">{{ d.heating_min_setpoint }}</td>
+                <td class="border px-2 py-1 col-heating_max_setpoint">{{ d.heating_max_setpoint }}</td>
+                <td class="border px-2 py-1 col-standby_airflow">{{ d.standby_airflow }}</td>
+                <td class="border px-2 py-1 col-damper_sensor">{{ d.damper_sensor }}</td>
+                <td class="border px-2 py-1 col-controller_airflow">{{ d.controller_airflow }}</td>
+                <td class="border px-2 py-1 col-airflow_setpoint">{{ d.airflow_setpoint }}</td>
+                <td class="border px-2 py-1 col-damper_position">{{ d.damper_position }}</td>
+                <td class="border px-2 py-1 col-damper_sensor_calibration">{{ d.damper_sensor_calibration }}</td>
+                <td class="border px-2 py-1 col-flow_factor">{{ d.flow_factor }}</td>
+                <td class="border px-2 py-1 col-space_temp">{{ d.space_temp }}</td>
+                <td class="border px-2 py-1 col-space_temp_setpoint">{{ d.space_temp_setpoint }}</td>
+                <td class="border px-2 py-1 col-discharge_temp">{{ d.discharge_temp }}</td>
+
+
             </tr>
             {% endfor %}
         </tbody>
@@ -129,7 +189,24 @@
 {% endif %}
 
 <script>
+
+    
 document.addEventListener("DOMContentLoaded", function () {
+    // --- VAV Box Size Map ---
+    const vavBoxSizeMap = {
+        1: "4 in_",
+        2: "5 in_",
+        3: "6 in_",
+        4: "8 in_",
+        5: "10 in_",
+        6: "12 in_",
+        7: "14 in_",
+        8: "16 in_",
+        9: "24x16 in_",
+        10: "28x14 in_",
+        11: "32x16 in_",
+        12: "Other_"
+    };
     const form = document.getElementById("siteSelectForm");
     const spinner = document.getElementById("loadingSpinner");
 
@@ -138,7 +215,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const checkboxes = document.querySelectorAll('input[type="checkbox"][data-col]');
     const table = document.getElementById("deviceTable");
     const tbody = table.getElementsByTagName("tbody")[0];
+
     const rows = Array.from(tbody.getElementsByTagName("tr"));
+    // Map vav_box_size values to string
+    rows.forEach(row => {
+        const cell = row.querySelector(".col-vav_box_size");
+        if (cell) {
+            const val = parseInt(cell.textContent.trim());
+            if (!isNaN(val)) cell.textContent = vavBoxSizeMap[val] || `Unknown (${val})`;
+        }
+    });
 
     function updateColumns() {
         checkboxes.forEach(cb => {
@@ -309,11 +395,34 @@ document.getElementById("exportBtn").addEventListener("click", () => {
                 arrowSpan.textContent = sortDir === 1 ? '▲' : '▼';
 
                 const sortedRows = rows.slice().sort((a, b) => {
-                    const aText = a.children[colIndex].textContent.trim().toLowerCase();
-                    const bText = b.children[colIndex].textContent.trim().toLowerCase();
-                    if (!isNaN(aText) && !isNaN(bText)) return sortDir * (Number(aText) - Number(bText));
-                    return sortDir * aText.localeCompare(bText);
-                });
+    const aText = a.children[colIndex].textContent.trim().toLowerCase();
+    const bText = b.children[colIndex].textContent.trim().toLowerCase();
+
+    // Check if this is the IP column
+            const colClass = Array.from(table.querySelectorAll('thead tr:first-child th')[colIndex].classList).find(c => c.startsWith('col-'));
+                if (colClass === 'col-ip1' || colClass === 'col-ip2') {
+                    // Extract last three numbers from IP
+                    const extractLast3 = ip => {
+                        const parts = ip.split('.').map(Number);
+                        if (parts.length === 4) return parts.slice(1).join('.'); // last 3 numbers
+                        return ip;
+                    };
+                    const aVal = extractLast3(aText);
+                    const bVal = extractLast3(bText);
+
+                    const aNums = aVal.split('.').map(Number);
+                    const bNums = bVal.split('.').map(Number);
+                    for (let i = 0; i < aNums.length; i++) {
+                        if (aNums[i] !== bNums[i]) return sortDir * (aNums[i] - bNums[i]);
+                    }
+                    return 0;
+                }
+
+                // Numeric sort fallback
+                if (!isNaN(aText) && !isNaN(bText)) return sortDir * (Number(aText) - Number(bText));
+                return sortDir * aText.localeCompare(bText);
+            });
+
 
                 sortedRows.forEach(row => tbody.appendChild(row));
             });
