@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+        <link rel="icon" type="image/png" href="{{ url_for('static', filename='Delta.png') }}">
+        <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='Delta.png') }}">
+
+        <title>enteliWeb API Query - {% block title %}{% endblock %}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            :root {
+                --delta-red: #e51938;
+                --delta-dark: #222222;
+                --delta-muted: #d6d6d6;
+                --delta-card: #ffffff;
+            }
+
+            .delta-btn {
+                background: var(--delta-red);
+                color: white;
+            }
+
+            .delta-btn:hover {
+                filter: brightness(0.92);
+            }
+
+            .delta-card {
+                background: var(--delta-card);
+                border-radius: .5rem;
+                padding: 1rem;
+            }
+
+            .delta-header {
+                background: var(--delta-dark);
+                color: white;
+            }
+        </style>
+    </head>
+
+    <body class="bg-gray-50 text-gray-800 min-h-screen">
+        <header class="bg-red-700 text-white shadow p-4">
+            <div
+                class="container mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 text-center sm:text-left">
+                <!-- Logo + Title -->
+                <div class="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-3">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="logo" class="h-9" />
+                    <div class="font-semibold text-lg">enteliWeb API Query</div>
+                </div>
+
+                <!-- Navigation -->
+                <nav
+                    class="text-sm flex flex-col items-center sm:flex-row sm:justify-end sm:items-center gap-2 sm:gap-3">
+                    <a href="{{ url_for('select_site') }}" class="px-3 py-1 delta-btn rounded text-white">Sites</a>
+                    <a href="{{ url_for('api_query') }}" class="px-3 py-1 delta-btn rounded text-white">API Query</a>
+                    <a href="{{ url_for('logout') }}" class="px-3 py-1 delta-btn rounded text-white">Change Site
+                        Login</a>
+                </nav>
+
+            </div>
+        </header>
+
+        <main class="container mx-auto p-6">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="mb-4">
+                {% for cat, msg in messages %}
+                <div
+                    class="p-3 rounded mb-2 {% if cat=='danger' %}bg-red-100 text-red-800{% elif cat=='success' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ msg }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+    </body>
+
+</html>

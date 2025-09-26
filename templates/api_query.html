@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}API Query{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto delta-card">
+    <h2 class="text-xl font-semibold mb-4">Custom API Query</h2>
+    <form method="POST" class="flex flex-col gap-2">
+        <label>Base URL</label>
+        <input type="text" name="api_base_url" class="w-full px-2 py-1 border rounded"
+            placeholder="http://enteliweb.server" required value="{{ api_base_url or '' }}">
+
+        <label>Username</label>
+        <input type="text" name="api_username" class="w-full px-2 py-1 border rounded" required
+            value="{{ api_username or '' }}">
+
+        <label>Password</label>
+        <input type="password" name="api_password" class="w-full px-2 py-1 border rounded" required
+            value="{{ api_password or '' }}">
+
+        <label>Method</label>
+        <select id="methodSelect" name="method" class="w-full px-2 py-1 border rounded">
+            <option value="GET" {% if method=="GET" %}selected{% endif %}>GET</option>
+            <option value="POST" {% if method=="POST" %}selected{% endif %}>POST</option>
+        </select>
+
+        <label>Endpoint</label>
+        <input type="text" name="endpoint" class="w-full px-2 py-1 border rounded" placeholder="api/.bacnet/MainSite"
+            required value="{{ endpoint or '' }}">
+
+        <!-- POST Body (only visible if POST selected) -->
+        <div id="postBodyContainer" class="{% if method != 'POST' %}hidden{% endif %}">
+            <label>POST Body (JSON)</label>
+            <textarea name="body" rows="12" class="w-full px-2 py-1 border rounded text-sm font-mono"
+                placeholder='{"key": "value"}'>{{ body or '' }}</textarea>
+        </div>
+
+        <button type="submit" class="px-3 py-1 delta-btn rounded text-white mt-2">Query</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const methodSelect = document.getElementById("methodSelect");
+        const postBodyContainer = document.getElementById("postBodyContainer");
+
+        function togglePostBody() {
+            if (methodSelect.value === "POST") {
+                postBodyContainer.classList.remove("hidden");
+            } else {
+                postBodyContainer.classList.add("hidden");
+            }
+        }
+
+        methodSelect.addEventListener("change", togglePostBody);
+        togglePostBody(); // run on page load
+    });
+</script>
+
+
+
+{% if status_code or json_result %}
+<div class="mt-4 delta-card w-full max-w-4xl mx-auto">
+    <h3 class="text-lg font-semibold mb-2">HTTP Response</h3>
+
+    <div class="bg-gray-100 p-2 rounded text-sm mb-2">
+        {% if full_url %}
+        <div><span class="font-semibold">URL:</span> <code>{{ full_url }}</code></div>
+        {% endif %}
+        {% if status_code %}
+        <div><span class="font-semibold">Status Code:</span> {{ status_code }}</div>
+        {% endif %}
+    </div>
+
+    {% if json_result %}
+    <details>
+        <summary class="cursor-pointer text-blue-600 hover:underline">Show Raw JSON</summary>
+        <pre class="mt-2 text-sm overflow-x-auto">{{ json_result | tojson(indent=2) }}</pre>
+    </details>
+    {% endif %}
+</div>
+{% endif %}
+
+
+{% endblock %}

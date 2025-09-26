@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Sites{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-2xl font-semibold mb-2">Select a Site</h2>
+    {% if base_url %}
+    <p class="text-gray-500 mb-4">
+        Current Base URL:
+        <a href="{{ base_url }}" target="_blank" class="text-blue-600 underline font-mono">{{ base_url }}</a>
+    </p>
+    {% endif %}
+
+    <p class="text-gray-600 mb-1">Choose a site from the list below to view its devices.</p>
+
+    <form id="siteSelectForm" method="POST" class="flex gap-2 max-w-md">
+        <select name="site" required class="px-2 py-1 border rounded flex-grow">
+            <option value="">Select a site</option>
+            {% for site in sites %}
+            <option value="{{ site }}" {% if site==selected_site %}selected{% endif %}>{{ site }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="px-3 py-1 delta-btn rounded text-white">Load Devices</button>
+    </form>
+</div>
+
+<!-- Spinner -->
+<div id="loadingSpinner" class="flex justify-center items-center my-4 hidden">
+    <div class="w-12 h-12 border-4 border-t-red-500 border-gray-200 rounded-full animate-spin"></div>
+    <span class="ml-2 text-gray-700">Loading information...</span>
+</div>
+
+{% if devices %}
+<div class="mt-8">
+    <h2 class="text-2xl font-semibold mb-2 mt-8">Devices found for: {{ selected_site }}</h2>
+
+    <!-- Device count and export -->
+    <div class="flex justify-between items-center mb-2">
+        <p class="text-gray-600">Devices found: <span id="deviceCount">{{ devices|length }}</span></p>
+        <button id="exportBtn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Export CSV</button>
+    </div>
+
+    <!-- Global search -->
+    <div class="mb-4 mt-4">
+        <input type="text" id="tableSearch" placeholder="Search table..."
+            class="px-2 py-1 border rounded w-full max-w-md">
+    </div>
+
+    <!-- Column toggle checkboxes -->
+    <div class="mb-4">
+        <span class="font-semibold mr-2">Toggle Columns:</span>
+        <!--<label class="mr-2"><input type="checkbox" checked data-col="vendorid"> Vendor ID</label>-->
+        <label class="mr-2"><input type="checkbox" checked data-col="vendor"> Vendor</label>
+        <label class="mr-2"><input type="checkbox" checked data-col="device_id"> Device Number</label>
+        <label class="mr-2"><input type="checkbox" checked data-col="display_name"> Device Name</label>
+        <label class="mr-2"><input type="checkbox" checked data-col="model_name"> Device Type</label>
+        <label class="mr-2"><input type="checkbox" data-col="app_version"> App Version</label>
+        <label class="mr-2"><input type="checkbox" data-col="fw_version"> Firmware Revision</label>
+        <label class="mr-2"><input type="checkbox" data-col="serial_number"> Serial Number</label>
+        <label class="mr-2"><input type="checkbox" data-col="ip1"> IP Address</label>
+        <!--<label class="mr-2"><input type="checkbox" data-col="ip2"> IP2</label>-->
+        <label class="mr-2"><input type="checkbox" data-col="mac"> MAC Address</label>
+    </div>
+
+    <table id="deviceTable" class="w-full border-collapse mt-4">
+        <thead>
+            <tr class="bg-gray-200 text-left">
+                <!--<th class="border px-2 py-1 col-vendorid">Vendor ID</th>-->
+                <th class="border px-2 py-1 col-vendor">Vendor</th>
+                <th class="border px-2 py-1 col-device_id">Device ID</th>
+                <th class="border px-2 py-1 col-display_name">Display Name</th>
+                <th class="border px-2 py-1 col-model_name">Model</th>
+                <th class="border px-2 py-1 col-app_version">App Version</th>
+                <th class="border px-2 py-1 col-fw_version">Firmware Revision</th>
+                <th class="border px-2 py-1 col-serial_number">Serial Number</th>
+                <th class="border px-2 py-1 col-ip1">IP1</th>
+                <!--<th class="border px-2 py-1 col-ip2">IP2</th>-->
+                <th class="border px-2 py-1 col-mac">MAC</th>
+            </tr>
+            <!-- Column filters -->
+            <tr class="bg-gray-100 text-left">
+                <!--<th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="vendorid"></th>-->
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="vendor"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="device_id"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="display_name">
+                </th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="model_name"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="app_version">
+                </th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="fw_version"></th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="serial_number">
+                </th>
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="ip1"></th>
+                <!--<th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="ip2"></th>-->
+                <th class="border px-2 py-1"><input type="text" class="column-filter w-full" data-col="mac"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in devices %}
+            <tr>
+                <!--<td class="border px-2 py-1 col-vendorid">{{ d.vendorid }}</td>-->
+                <td class="border px-2 py-1 col-vendor">{{ d.vendor }}</td>
+                <td class="border px-2 py-1 col-device_id">{{ d.device_id }}</td>
+                <td class="border px-2 py-1 col-display_name">{{ d.display_name }}</td>
+                <td class="border px-2 py-1 col-model_name">{{ d.model_name }}</td>
+                <td class="border px-2 py-1 col-app_version">{{ d.app_version }}</td>
+                <td class="border px-2 py-1 col-fw_version">{{ d.fw_version }}</td>
+                <td class="border px-2 py-1 col-serial_number">{{ d.serial_number }}</td>
+                <td class="border px-2 py-1 col-ip1">{{ d.ip1 }}</td>
+                <!--<td class="border px-2 py-1 col-ip2">{{ d.ip2 }}</td>-->
+                <td class="border px-2 py-1 col-mac">{{ d.mac }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("siteSelectForm");
+        const spinner = document.getElementById("loadingSpinner");
+
+        // Show spinner on submit
+        form.addEventListener("submit", function () {
+            spinner.classList.remove("hidden");
+        });
+
+        // Column toggle functionality
+        const checkboxes = document.querySelectorAll('input[type="checkbox"][data-col]');
+        const table = document.getElementById("deviceTable");
+        const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+
+        function updateColumns() {
+            checkboxes.forEach(cb => {
+                const colClass = 'col-' + cb.dataset.col;
+                document.querySelectorAll('tbody .' + colClass).forEach(cell => cell.style.display = cb.checked ? '' : 'none');
+                document.querySelectorAll('thead tr:first-child .' + colClass).forEach(th => th.style.display = cb.checked ? '' : 'none');
+                const filterInput = document.querySelector('thead tr:nth-child(2) .column-filter[data-col="' + cb.dataset.col + '"]');
+                if (filterInput) filterInput.closest('th').style.display = cb.checked ? '' : 'none';
+                localStorage.setItem('col-' + cb.dataset.col, cb.checked);
+            });
+            updateDeviceCount();
+        }
+
+        checkboxes.forEach(cb => {
+            const saved = localStorage.getItem('col-' + cb.dataset.col);
+            if (saved !== null) cb.checked = saved === 'true';
+        });
+
+        updateColumns();
+        checkboxes.forEach(cb => cb.addEventListener("change", updateColumns));
+
+        // --- Global search & column filters ---
+        const searchInput = document.getElementById("tableSearch");
+        const columnFilters = document.querySelectorAll(".column-filter");
+
+        function filterTable() {
+            const globalFilter = searchInput.value.toLowerCase();
+            const colFilters = {};
+            columnFilters.forEach(input => colFilters[input.dataset.col] = input.value.toLowerCase());
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName("td");
+                let show = true;
+                if (globalFilter) show = Array.from(cells).some(c => c.textContent.toLowerCase().includes(globalFilter));
+                if (show) {
+                    for (let j = 0; j < cells.length; j++) {
+                        const colClass = cells[j].className.split(' ').find(c => c.startsWith('col-'));
+                        const colName = colClass ? colClass.replace('col-', '') : null;
+                        if (colName && colFilters[colName] && !cells[j].textContent.toLowerCase().includes(colFilters[colName])) {
+                            show = false;
+                            break;
+                        }
+                    }
+                }
+                rows[i].style.display = show ? "" : "none";
+            }
+            updateDeviceCount();
+        }
+
+        function updateDeviceCount() {
+            const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none').length;
+            document.getElementById('deviceCount').textContent = visibleRows;
+        }
+
+        searchInput.addEventListener("input", filterTable);
+        columnFilters.forEach(input => input.addEventListener("input", filterTable));
+
+        // --- Export CSV ---
+        document.getElementById("exportBtn").addEventListener("click", function () {
+            const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+            if (!visibleRows.length) return;
+
+            const cols = Array.from(table.querySelectorAll("thead tr:first-child th")).filter(th => th.style.display !== 'none');
+            const colNames = cols.map(th => th.textContent.trim());
+            const csv = [colNames.join(",")];
+
+            visibleRows.forEach(row => {
+                const cells = Array.from(row.querySelectorAll("td")).filter(td => td.style.display !== 'none');
+                const rowData = cells.map(td => `"${td.textContent.replace(/"/g, '""')}"`);
+                csv.push(rowData.join(","));
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "devices_export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    });
+</script>
+{% endblock %}

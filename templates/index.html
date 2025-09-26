@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto delta-card text-center">
+    <h2 class="text-xl font-semibold mb-4">Welcome to enteliWEB Device Manager</h2>
+    <p>Select an action below:</p>
+    <div class="mt-4 flex flex-col gap-2">
+        <a href="{{ url_for('select_site') }}" class="delta-btn px-4 py-2 rounded">View Sites</a>
+    </div>
+</div>
+{% endblock %}
