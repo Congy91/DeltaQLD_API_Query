@@ -37,14 +37,26 @@
     <!-- Device count and export -->
     <div class="flex justify-between items-center mb-2">
         <p class="text-gray-600">Devices found: <span id="deviceCount">{{ devices|length }}</span></p>
-        <button id="exportBtn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Export CSV</button>
+        <button id="exportBtn" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-blue-700">Export CSV</button>
     </div>
 
-    <!-- Global search -->
-    <div class="mb-4 mt-4">
-        <input type="text" id="tableSearch" placeholder="Search table..."
-            class="px-2 py-1 border rounded w-full max-w-md">
+   <div class="mb-4 mt-4 flex flex-col items-center gap-2">
+    <input type="text" id="tableSearch" placeholder="Search table..."
+        class="px-2 py-1 border rounded w-full max-w-md">
+
+    <div class="flex flex-wrap justify-center gap-2 mt-2">
+        <button type="button" class="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600" data-filter="reset">Reset</button>
+        <button type="button" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600" data-filter="delta">Delta</button>
+        <button type="button" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600" data-filter="3rdparty">3rd Party</button>
+        <button type="button" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600" data-filter="red5">Red5</button>
+        <button type="button" class="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600" data-filter="ebmgr">eBMGR</button>
+        <button type="button" class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600" data-filter="vav">VAV</button>
+        <button type="button" class="px-3 py-1 bg-pink-500 text-white rounded hover:bg-pink-600" data-filter="dfm400p">DFM400P</button>
+        <button type="button" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600" data-filter="ip">IP Devices</button>
     </div>
+</div>
+
+
 
     <!-- Column toggle checkboxes -->
     <div class="mb-4">
@@ -117,100 +129,197 @@
 {% endif %}
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const form = document.getElementById("siteSelectForm");
-        const spinner = document.getElementById("loadingSpinner");
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("siteSelectForm");
+    const spinner = document.getElementById("loadingSpinner");
 
-        // Show spinner on submit
-        form.addEventListener("submit", function () {
-            spinner.classList.remove("hidden");
-        });
+    form.addEventListener("submit", () => spinner.classList.remove("hidden"));
 
-        // Column toggle functionality
-        const checkboxes = document.querySelectorAll('input[type="checkbox"][data-col]');
-        const table = document.getElementById("deviceTable");
-        const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][data-col]');
+    const table = document.getElementById("deviceTable");
+    const tbody = table.getElementsByTagName("tbody")[0];
+    const rows = Array.from(tbody.getElementsByTagName("tr"));
 
-        function updateColumns() {
-            checkboxes.forEach(cb => {
-                const colClass = 'col-' + cb.dataset.col;
-                document.querySelectorAll('tbody .' + colClass).forEach(cell => cell.style.display = cb.checked ? '' : 'none');
-                document.querySelectorAll('thead tr:first-child .' + colClass).forEach(th => th.style.display = cb.checked ? '' : 'none');
-                const filterInput = document.querySelector('thead tr:nth-child(2) .column-filter[data-col="' + cb.dataset.col + '"]');
-                if (filterInput) filterInput.closest('th').style.display = cb.checked ? '' : 'none';
-                localStorage.setItem('col-' + cb.dataset.col, cb.checked);
-            });
-            updateDeviceCount();
-        }
-
+    function updateColumns() {
         checkboxes.forEach(cb => {
-            const saved = localStorage.getItem('col-' + cb.dataset.col);
-            if (saved !== null) cb.checked = saved === 'true';
+            const colClass = 'col-' + cb.dataset.col;
+            document.querySelectorAll('tbody .' + colClass).forEach(cell => cell.style.display = cb.checked ? '' : 'none');
+            document.querySelectorAll('thead tr:first-child .' + colClass).forEach(th => th.style.display = cb.checked ? '' : 'none');
+            const filterInput = document.querySelector('thead tr:nth-child(2) .column-filter[data-col="' + cb.dataset.col + '"]');
+            if (filterInput) filterInput.closest('th').style.display = cb.checked ? '' : 'none';
+            localStorage.setItem('col-' + cb.dataset.col, cb.checked);
+        });
+        updateDeviceCount();
+    }
+
+    checkboxes.forEach(cb => {
+        const saved = localStorage.getItem('col-' + cb.dataset.col);
+        if (saved !== null) cb.checked = saved === 'true';
+    });
+
+    updateColumns();
+    checkboxes.forEach(cb => cb.addEventListener("change", updateColumns));
+
+    const searchInput = document.getElementById("tableSearch");
+    const columnFilters = document.querySelectorAll(".column-filter");
+
+    function filterTable() {
+        const globalFilter = searchInput.value.toLowerCase();
+        const colFilters = {};
+        columnFilters.forEach(input => {
+            if (input.value.trim()) {
+                colFilters[input.dataset.col] = input.value
+                    .toLowerCase()
+                    .split(",")
+                    .map(v => v.trim())
+                    .filter(v => v);
+            }
         });
 
-        updateColumns();
-        checkboxes.forEach(cb => cb.addEventListener("change", updateColumns));
+        rows.forEach(row => {
+            const cells = row.getElementsByTagName("td");
+            let show = true;
 
-        // --- Global search & column filters ---
-        const searchInput = document.getElementById("tableSearch");
-        const columnFilters = document.querySelectorAll(".column-filter");
+            if (globalFilter) {
+                show = Array.from(cells).some(c => c.textContent.toLowerCase().includes(globalFilter));
+            }
 
-        function filterTable() {
-            const globalFilter = searchInput.value.toLowerCase();
-            const colFilters = {};
-            columnFilters.forEach(input => colFilters[input.dataset.col] = input.value.toLowerCase());
-
-            for (let i = 0; i < rows.length; i++) {
-                const cells = rows[i].getElementsByTagName("td");
-                let show = true;
-                if (globalFilter) show = Array.from(cells).some(c => c.textContent.toLowerCase().includes(globalFilter));
-                if (show) {
-                    for (let j = 0; j < cells.length; j++) {
-                        const colClass = cells[j].className.split(' ').find(c => c.startsWith('col-'));
-                        const colName = colClass ? colClass.replace('col-', '') : null;
-                        if (colName && colFilters[colName] && !cells[j].textContent.toLowerCase().includes(colFilters[colName])) {
+            if (show) {
+                for (let j = 0; j < cells.length; j++) {
+                    const colClass = cells[j].className.split(' ').find(c => c.startsWith('col-'));
+                    const colName = colClass ? colClass.replace('col-', '') : null;
+                    if (colName && colFilters[colName]) {
+                        const cellText = cells[j].textContent.toLowerCase();
+                        const match = colFilters[colName].some(val => {
+                            if (val === '!ip') return cellText.trim() !== '';
+                            if (val.startsWith('!')) return !cellText.includes(val.substring(1));
+                            return cellText.includes(val);
+                        });
+                        if (!match) {
                             show = false;
                             break;
                         }
                     }
                 }
-                rows[i].style.display = show ? "" : "none";
             }
-            updateDeviceCount();
-        }
 
-        function updateDeviceCount() {
-            const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none').length;
-            document.getElementById('deviceCount').textContent = visibleRows;
-        }
+            row.style.display = show ? "" : "none";
+        });
 
-        searchInput.addEventListener("input", filterTable);
-        columnFilters.forEach(input => input.addEventListener("input", filterTable));
+        updateDeviceCount();
+    }
 
-        // --- Export CSV ---
-        document.getElementById("exportBtn").addEventListener("click", function () {
-            const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
-            if (!visibleRows.length) return;
+    const filterButtons = document.querySelectorAll('button[data-filter]');
+    filterButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const filter = btn.dataset.filter;
+            searchInput.value = '';
+            columnFilters.forEach(input => input.value = '');
 
-            const cols = Array.from(table.querySelectorAll("thead tr:first-child th")).filter(th => th.style.display !== 'none');
-            const colNames = cols.map(th => th.textContent.trim());
-            const csv = [colNames.join(",")];
+            switch (filter) {
+                case "reset": break;
+                case "delta": columnFilters.forEach(input => { if (input.dataset.col === 'vendor') input.value = 'delta controls'; }); break;
+                case "3rdparty": columnFilters.forEach(input => { if (input.dataset.col === 'vendor') input.value = '!delta controls'; }); break;
+                case "red5": columnFilters.forEach(input => { if (input.dataset.col === 'model_name') input.value = 'red5'; }); break;
+                case "ebmgr": columnFilters.forEach(input => { if (input.dataset.col === 'model_name') input.value = 'ebmgr'; }); break;
+                case "vav": columnFilters.forEach(input => { if (input.dataset.col === 'model_name') input.value = 'ezv,dvc,v440,v100'; }); break;
+                case "dfm400p": columnFilters.forEach(input => { if (input.dataset.col === 'model_name') input.value = '400p'; }); break;
+                case "ip": columnFilters.forEach(input => { if (input.dataset.col === 'ip1') input.value = '!ip'; }); break;
+            }
 
-            visibleRows.forEach(row => {
-                const cells = Array.from(row.querySelectorAll("td")).filter(td => td.style.display !== 'none');
-                const rowData = cells.map(td => `"${td.textContent.replace(/"/g, '""')}"`);
-                csv.push(rowData.join(","));
-            });
-
-            const csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "devices_export.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            filterTable();
         });
     });
+
+    function updateDeviceCount() {
+        const visibleRows = rows.filter(row => row.style.display !== 'none').length;
+        document.getElementById('deviceCount').textContent = visibleRows;
+    }
+
+    searchInput.addEventListener("input", filterTable);
+    columnFilters.forEach(input => input.addEventListener("input", filterTable));
+
+    // --- Export XLSX ---
+document.getElementById("exportBtn").addEventListener("click", () => {
+    const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+    if (!visibleRows.length) return;
+
+    const cols = Array.from(table.querySelectorAll("thead tr:first-child th")).filter(th => th.style.display !== 'none');
+    
+    // Map your visible columns to desired Excel column names
+    const colNameMap = {
+        'vendor': 'Vendor',
+        'device_id': 'Device Number',
+        'display_name': 'Device Name',
+        'model_name': 'Device Type',
+        'app_version': 'App Version',
+        'fw_version': 'Firmware',
+        'serial_number': 'Serial Number',
+        'ip1': 'IP Address',
+        'mac': 'MAC Address',
+        'ip2': 'IP Address 2',
+    };
+
+    const colKeys = cols.map(th => Array.from(th.classList).find(c => c.startsWith('col-')).replace('col-', ''));
+    const excelCols = colKeys.map(key => colNameMap[key] || key);
+
+    // Build data array
+    const data = [excelCols];
+    visibleRows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll("td")).filter(td => td.style.display !== 'none');
+        const rowData = cells.map(td => td.textContent.trim());
+        data.push(rowData);
+    });
+
+    // Create worksheet & workbook
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Devices");
+
+    // Export file
+    XLSX.writeFile(wb, "devices_export.xlsx");
+});
+
+
+        // --- Column sorting with arrow indicators ---
+        let sortCol = null;
+        let sortDir = 1; // 1 = asc, -1 = desc
+
+        table.querySelectorAll('thead tr:first-child th').forEach(th => {
+            th.style.cursor = 'pointer';
+            
+            // Create a span to hold the arrow
+            let arrowSpan = document.createElement('span');
+            arrowSpan.style.marginLeft = '4px';
+            th.appendChild(arrowSpan);
+
+            th.addEventListener('click', () => {
+                const colClass = Array.from(th.classList).find(c => c.startsWith('col-'));
+                if (!colClass) return;
+                const colIndex = Array.from(th.parentNode.children).indexOf(th);
+
+                if (sortCol === colIndex) sortDir = -sortDir; // toggle
+                else sortDir = 1;
+                sortCol = colIndex;
+
+                // Remove arrow from all headers
+                table.querySelectorAll('thead tr:first-child th span').forEach(span => span.textContent = '');
+
+                // Add arrow to current header
+                arrowSpan.textContent = sortDir === 1 ? '▲' : '▼';
+
+                const sortedRows = rows.slice().sort((a, b) => {
+                    const aText = a.children[colIndex].textContent.trim().toLowerCase();
+                    const bText = b.children[colIndex].textContent.trim().toLowerCase();
+                    if (!isNaN(aText) && !isNaN(bText)) return sortDir * (Number(aText) - Number(bText));
+                    return sortDir * aText.localeCompare(bText);
+                });
+
+                sortedRows.forEach(row => tbody.appendChild(row));
+            });
+        });
+});
 </script>
+
+
 {% endblock %}
